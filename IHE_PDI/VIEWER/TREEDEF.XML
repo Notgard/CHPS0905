@@ -1,0 +1,89 @@
+<!-- edited with XML Spy v4.3 U (http://www.xmlspy.com) by Steph (TSI) -->
+<root>
+	<Study>
+		<StudyDescription>
+			<FR/>
+			<US/>
+			<Table>STUDY</Table>
+			<!--Study description-->
+			<Group>0008</Group>
+			<Element>1030</Element>
+		</StudyDescription>
+	</Study>
+	<Series>
+		<MR>
+			<ProtocolName>
+				<FR/>
+				<US/>
+				<Table>SERIES</Table>
+				<!--Protocole Name-->
+				<Group>0018</Group>
+				<Element>1030</Element>
+			</ProtocolName>
+			<SeriesDescription>
+				<FR/>
+				<US/>
+				<Table>SERIES</Table>
+				<!--Series Description-->
+				<Group>0008</Group>
+				<Element>103E</Element>
+			</SeriesDescription>
+			<ImageType>
+				<FR/>
+				<US/>
+				<Table>Image</Table>
+				<!--ImageType-->
+				<Group>0008</Group>
+				<Element>0008</Element>
+			</ImageType>
+		</MR>
+		<CT>
+			<SeriesDescription>
+				<FR/>
+				<US/>
+				<Table>SERIES</Table>
+				<!--Series Description-->
+				<Group>0008</Group>
+				<Element>103E</Element>
+			</SeriesDescription>
+			<ImageType>
+				<FR/>
+				<US/>
+				<Table>Image</Table>
+				<!--ImageType-->
+				<Group>0008</Group>
+				<Element>0008</Element>
+			</ImageType>
+		</CT>
+		<SR>
+			<SeriesDescription>
+				<FR/>
+				<US/>
+				<Table>SERIES</Table>
+				<!--Series Description-->
+				<Group>0008</Group>
+				<Element>103E</Element>
+			</SeriesDescription>
+		</SR>
+		<CR>
+			<SeriesDescription>
+				<FR/>
+				<US/>
+				<Table>SERIES</Table>
+				<!--Series Description-->
+				<Group>0008</Group>
+				<Element>103E</Element>
+			</SeriesDescription>
+		</CR>
+		<OT>
+			<SeriesDescription>
+				<FR/>
+				<US/>
+				<Table>SERIES</Table>
+				<!--Series Description-->
+				<Group>0008</Group>
+				<Element>103E</Element>
+			</SeriesDescription>
+		</OT>
+	</Series>
+</root>

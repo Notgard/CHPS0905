@@ -1,0 +1,18 @@
+[VOLUME]
+Name=
+BuildDate=
+BuildTime=
+Index=1/1
+[SITE]
+Name=REIMS HMB
+Address1=CHU de REIMS
+Address2=
+Address3=
+Service=
+[PATIENT]
+Name=Recherche
+[INTERFACE]
+Dicom=1
+Jpeg=0
+Siemens=0
+Mac=1
