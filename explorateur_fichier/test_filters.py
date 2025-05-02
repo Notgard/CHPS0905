@@ -14,7 +14,7 @@ class FileExplorerApp:
         self.root.title("Explorateur de fichiers - Patients")
         self.root.geometry("600x500")  # Taille de la fenêtre
         self.root.configure(bg="#ececec")
-        self.root.iconbitmap("icon.ico")  # Icône de la fenêtre
+        #self.root.iconbitmap("/home/notgard/CHPS0905/Projet2025/explorateur_fichier/app.ico")  # Icône de la fenêtre
         
         # Charger des icônes
         """
@@ -110,6 +110,7 @@ class FileExplorerApp:
             # Appeler ici ta fonction de filtrage bruit gaussien sur file_path
 
 if __name__ == "__main__":
+    fiji_path = "C:\Users\gaelr\Fiji.app\ImageJ-win64.exe"
     root = ThemedTk(theme="radiance")  # Utilisation d'un thème moderne
-    app = FileExplorerApp(root)
+    app = FileExplorerApp(root, fiji_path)
     root.mainloop()
