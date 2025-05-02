@@ -6,9 +6,9 @@ def resample_to_fixed(moving, fixed):
     resample_filter.SetOutputSpacing(fixed.GetSpacing())
     resample_filter.SetOutputOrigin(fixed.GetOrigin())
     resample_filter.SetOutputDirection(fixed.GetDirection())
-    #resample_filter.SetSize(fixed.GetLargestPossibleRegion().GetSize())
+    resample_filter.SetSize(fixed.GetLargestPossibleRegion().GetSize())
     resample_filter.SetTransform(itk.IdentityTransform[itk.D, 3].New())
-    #resample_filter.SetInterpolator(itk.LinearInterpolateImageFunction.New(moving))
+    resample_filter.SetInterpolator(itk.LinearInterpolateImageFunction.New(moving))
     resample_filter.Update()
     return resample_filter.GetOutput()
 
