@@ -1,18 +1,16 @@
 import vtk
 
 reader = vtk.vtkXMLUnstructuredGridReader()
-reader.SetFileName("Stokes.vtu")
+reader.SetFileName("VTK_Files/Stokes.vtu")
 reader.Update()
-ugrid = reader.GetOutput()
 
 resampler = vtk.vtkResampleToImage()
-resampler.SetInputData(ugrid)
-resampler.SetSamplingDimensions(128, 128, 128)
+resampler.SetInputData(reader.GetOutput())
+resampler.SetSamplingDimensions(128, 128, 128)  # adjust as needed
 resampler.SetUseInputBounds(True)
 resampler.Update()
 
 writer = vtk.vtkXMLImageDataWriter()
-writer.SetFileName("Stokes_resampled.vti")
+writer.SetFileName("output.vti")  # VTK image data file
 writer.SetInputData(resampler.GetOutput())
 writer.Write()
-print("Resampling complete. Output saved as Stokes_resampled.vti.")

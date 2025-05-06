@@ -4,6 +4,10 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+import SimpleITK as sitk
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
+
 def get_numpy_slice(image, axis=2):
     """Convert a 3D SimpleITK image to a 2D slice for display."""
     array = sitk.GetArrayFromImage(image)  # Shape: [z, y, x]
@@ -51,11 +55,13 @@ def create_overlay_image(fixed, moving):
 
 filtered_dicom_dir = "image_filtering/filtered_dicom"
 fixed_image_name = "Ax_3DTOF_output.vtk"
-moving_path = "Sag_GRE_output.vtk"
+moving_path = "Sag_GRE2_output.vtk"
+
+file_type = moving_path.split("_")[0] + moving_path.split("_")[1]
 
 # 1. Read the images
 fixed_image = sitk.ReadImage(os.path.join(filtered_dicom_dir, fixed_image_name), sitk.sitkFloat32)
-moving_image = sitk.ReadImage(os.path.join(filtered_dicom_dir, moving_path), sitk.sitkFloat32)
+moving_image = sitk.ReadImage("VTK_Files/Stokes.vtk", sitk.sitkFloat32)
 
 print("Fixed origin:", fixed_image.GetOrigin())
 print("Moving origin:", moving_image.GetOrigin())
@@ -89,7 +95,7 @@ registration_method = sitk.ImageRegistrationMethod()
 # Metric: Use Mutual Information for multimodal, MeanSquares for monomodal
 registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
 registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-registration_method.SetMetricSamplingPercentage(0.6)
+registration_method.SetMetricSamplingPercentage(0.2)
 
 # Optimizer
 registration_method.SetOptimizerAsGradientDescent(learningRate=1.0, numberOfIterations=100, convergenceMinimumValue=1e-6, convergenceWindowSize=10)
@@ -129,6 +135,18 @@ print("Final transform parameters:", final_transform.GetParameters())  # (rx, ry
 before_overlay = create_overlay_image(fixed_image, initial_resampled)
 after_overlay = create_overlay_image(fixed_image, resampled_image)
 
+#print before and after image direction
+print("Before registration direction:", initial_resampled.GetDirection())
+print("After registration direction:", resampled_image.GetDirection())
+print("Before registration size:", initial_resampled.GetSize())
+print("After registration size:", resampled_image.GetSize())
+print("Before registration origin:", initial_resampled.GetOrigin())
+print("After registration origin:", resampled_image.GetOrigin())
+print("Before registration spacing:", initial_resampled.GetSpacing())
+print("After registration spacing:", resampled_image.GetSpacing())
+print("Before registration pixel type:", initial_resampled.GetPixelIDTypeAsString())
+print("After registration pixel type:", resampled_image.GetPixelIDTypeAsString())
+
 # Plot side-by-side
 plt.figure(figsize=(16, 8))
 
@@ -148,49 +166,4 @@ plt.show()
 #sitk.Show(resampled_image, "Registered Image")
 
 # Save the result
-sitk.WriteImage(resampled_image, "registered_image.vtk")
-
-from mpl_toolkits.mplot3d import Axes3D
-
-def plot_transform_axes(transform, title="Transform Visualization", axis_length=50.0):
-    """
-    Visualize the rotation and translation from a 3D transform using coordinate axes.
-    """
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection='3d')
-    
-    # Origin of fixed space (reference)
-    origin = np.array([0, 0, 0])
-    x_axis = np.array([axis_length, 0, 0])
-    y_axis = np.array([0, axis_length, 0])
-    z_axis = np.array([0, 0, axis_length])
-    
-    # Apply transform to each axis vector
-    transformed_origin = np.array(transform.TransformPoint(origin))
-    transformed_x = np.array(transform.TransformPoint(x_axis))
-    transformed_y = np.array(transform.TransformPoint(y_axis))
-    transformed_z = np.array(transform.TransformPoint(z_axis))
-    
-    # Plot original axes
-    ax.quiver(*origin, *x_axis, color='r', label='X (original)')
-    ax.quiver(*origin, *y_axis, color='g', label='Y (original)')
-    ax.quiver(*origin, *z_axis, color='b', label='Z (original)')
-    
-    # Plot transformed axes
-    ax.quiver(*transformed_origin, *(transformed_x - transformed_origin), color='r', linestyle='dashed', label='X (transformed)')
-    ax.quiver(*transformed_origin, *(transformed_y - transformed_origin), color='g', linestyle='dashed', label='Y (transformed)')
-    ax.quiver(*transformed_origin, *(transformed_z - transformed_origin), color='b', linestyle='dashed', label='Z (transformed)')
-
-    ax.set_xlim(-axis_length, axis_length*2)
-    ax.set_ylim(-axis_length, axis_length*2)
-    ax.set_zlim(-axis_length, axis_length*2)
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_title(title)
-    ax.legend()
-    plt.tight_layout()
-    plt.show()
-
-# Call it on your final transform
-plot_transform_axes(final_transform, title="Final Transform (Rotation + Translation)")
+sitk.WriteImage(resampled_image, f"registered_{file_type}.vtk")

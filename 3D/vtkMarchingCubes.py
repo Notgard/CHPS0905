@@ -103,9 +103,11 @@ if __name__ == '__main__':
     print(input_path.split("/"))
     print(f"Directory name: {dir_name}")
     
-    if "Sag_GRE2" in dir_name:
+    if "SagGRE2" in dir_name:
         print("Cropping volume for Sag_GRE2")
-        voi = (0, 80, 0, 127, 30, 110)
+        #voi = (0, 80, 0, 127, 30, 110)
+        #with paraview ExtractSubset (VOI) filter
+        voi = (0, 250, 0, 253, 60, 245)
         im = CropVolume(im, voi)
 
     poly = MarchingCubes(im, threshold=threshold, selective_regions=selective_region)

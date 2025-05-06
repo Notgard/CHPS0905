@@ -24,6 +24,15 @@ reader.SetFileNames(dicom_series)
 # Lecture de la série d'images DICOM
 image = reader.Execute()
 
+print(dir_name, files[dir_name])
+if dir_name == "Ax_3DTOF":
+    print("Changing orientation to PIR")
+    image = sitk.DICOMOrient(image, "PIR")
+    input_direction = image.GetDirection()
+    input_orientation = sitk.DICOMOrientImageFilter_GetOrientationFromDirectionCosines(input_direction)
+    print(f'Input Direction: {input_direction}')
+    print(f'Input Orientation: {input_orientation}')
+
 otsu_filter = sitk.OtsuThresholdImageFilter()
 otsu_filter.SetInsideValue(0)
 otsu_filter.SetOutsideValue(1)
