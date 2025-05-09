@@ -61,7 +61,7 @@ file_type = moving_path.split("_")[0] + moving_path.split("_")[1]
 
 # 1. Read the images
 fixed_image = sitk.ReadImage(os.path.join(filtered_dicom_dir, fixed_image_name), sitk.sitkFloat32)
-moving_image = sitk.ReadImage("VTK_Files/Stokes.vtk", sitk.sitkFloat32)
+moving_image = sitk.ReadImage("output.vtk", sitk.sitkFloat32)
 
 print("Fixed origin:", fixed_image.GetOrigin())
 print("Moving origin:", moving_image.GetOrigin())
