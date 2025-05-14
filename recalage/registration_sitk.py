@@ -1,13 +1,33 @@
-import SimpleITK as sitk
+import argparse
 import os
-
+import SimpleITK as sitk
 import matplotlib.pyplot as plt
 import numpy as np
+import itk
+import vtk
+import pyvista as pv
+import imageio.v2 as imageio
 
-import SimpleITK as sitk
-import matplotlib.pyplot as plt
-from IPython.display import clear_output
+def save_registration_gif(snapshots, fixed_image, output_path="registration.gif"):
+    frames = []
+    for iteration, img in snapshots:
+        ov = create_overlay_image(fixed_image, img)
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.imshow(ov, origin='lower')
+        ax.set_title(f"Iteration {iteration}")
+        ax.axis('off')
 
+        # Save to a temporary image buffer
+        fig.canvas.draw()
+        frame = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        frames.append(frame)
+        plt.close(fig)
+
+    # Write to GIF
+    imageio.mimsave(output_path, frames, duration=0.5)  # 0.5s per frame
+    print(f"Saved animation to {output_path}")
+    
 def get_numpy_slice(image, axis=2):
     """Convert a 3D SimpleITK image to a 2D slice for display."""
     array = sitk.GetArrayFromImage(image)  # Shape: [z, y, x]
@@ -19,25 +39,6 @@ def get_numpy_slice(image, axis=2):
         return array[:, :, array.shape[2] // 2]
     else:
         raise ValueError("Axis must be 0, 1, or 2.")
-
-def plot_overlay(fixed, moving, title="Overlay"):
-    """Show a red-blue overlay to visualize alignment."""
-    fixed_np = get_numpy_slice(fixed)
-    moving_np = get_numpy_slice(moving)
-
-    # Normalize to [0, 1] for display
-    fixed_np = (fixed_np - fixed_np.min()) / (np.ptp(fixed_np) + 1e-5)
-    moving_np = (moving_np - moving_np.min()) / (np.ptp(moving_np) + 1e-5)
-
-    rgb = np.zeros((*fixed_np.shape, 3))
-    rgb[..., 0] = fixed_np  # Red channel
-    rgb[..., 2] = moving_np  # Blue channel
-
-    plt.figure(figsize=(8, 8))
-    plt.imshow(rgb, origin='lower')
-    plt.title(title)
-    plt.axis('off')
-    plt.show()
 
 def create_overlay_image(fixed, moving):
     """Create a red-blue overlay image from two images."""
@@ -53,117 +54,210 @@ def create_overlay_image(fixed, moving):
     rgb[..., 2] = moving_np  # Blue channel
     return rgb
 
-filtered_dicom_dir = "image_filtering/filtered_dicom"
-fixed_image_name = "Ax_3DTOF_output.vtk"
-moving_path = "Sag_GRE2_output.vtk"
-
-file_type = moving_path.split("_")[0] + moving_path.split("_")[1]
-
-# 1. Read the images
-fixed_image = sitk.ReadImage(os.path.join(filtered_dicom_dir, fixed_image_name), sitk.sitkFloat32)
-moving_image = sitk.ReadImage("output.vtk", sitk.sitkFloat32)
-
-print("Fixed origin:", fixed_image.GetOrigin())
-print("Moving origin:", moving_image.GetOrigin())
-print("Fixed spacing:", fixed_image.GetSpacing())
-print("Moving spacing:", moving_image.GetSpacing())
-print("Fixed direction:", fixed_image.GetDirection())
-print("Moving direction:", moving_image.GetDirection())
-
-# 2. Compute centers for initial alignment
 def compute_center(image):
     index_center = [size // 2 for size in image.GetSize()]
     return image.TransformIndexToPhysicalPoint(index_center)
 
-fixed_center = compute_center(fixed_image)
-moving_center = compute_center(moving_image)
+def main():
+    parser = argparse.ArgumentParser(description="Register two VTK images using SimpleITK.")
+    parser.add_argument("--fixed", required=True, help="Path to the fixed VTK image.")
+    parser.add_argument("--moving", required=True, help="Path to the moving VTK image.")
+    parser.add_argument("--visualize", required=False, action="store_true", help="Get visualization output.")
+    args = parser.parse_args()
 
-# 3. Compute translation to align centers
-translation = [fc - mc for fc, mc in zip(fixed_center, moving_center)]
-#initial_transform = sitk.TranslationTransform(3, translation)
-initial_transform = sitk.CenteredTransformInitializer(
-    fixed_image,
-    moving_image,
-    sitk.Euler3DTransform(),
-    #sitk.TranslationTransform(3),
-    sitk.CenteredTransformInitializerFilter.GEOMETRY
-)
-initial_transform = sitk.Euler3DTransform(initial_transform)
-# 4. Setup registration method
-registration_method = sitk.ImageRegistrationMethod()
+    fixed_image = sitk.ReadImage(args.fixed, sitk.sitkFloat32)
+    if "test" in args.moving:
+        moving_image = pv.read(args.moving)
+        moving_image = sitk.ReadImage(moving_image, sitk.sitkFloat32)
+    else:
+        moving_image = sitk.ReadImage(args.moving, sitk.sitkFloat32)
+    #moving_image = itk.imread(args.moving, itk.F)
+    #reader = vtk.vtkXMLUnstructuredGridReader()
+    #reader.SetFileName("grid.vtk")
 
-# Metric: Use Mutual Information for multimodal, MeanSquares for monomodal
-registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
-registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-registration_method.SetMetricSamplingPercentage(0.2)
+    print("Fixed origin:", fixed_image.GetOrigin())
+    print("Moving origin:", moving_image.GetOrigin())
+    print("Fixed spacing:", fixed_image.GetSpacing())
+    print("Moving spacing:", moving_image.GetSpacing())
+    print("Fixed direction:", fixed_image.GetDirection())
+    print("Moving direction:", moving_image.GetDirection())
 
-# Optimizer
-registration_method.SetOptimizerAsGradientDescent(learningRate=1.0, numberOfIterations=100, convergenceMinimumValue=1e-6, convergenceWindowSize=10)
-registration_method.SetOptimizerScalesFromPhysicalShift()
+    # Compute centers and initial transform
+    fixed_center = compute_center(fixed_image)
+    moving_center = compute_center(moving_image)
 
-# Interpolator
-registration_method.SetInterpolator(sitk.sitkLinear)
+    initial_transform = sitk.CenteredTransformInitializer(
+        fixed_image,
+        moving_image,
+        sitk.Euler3DTransform(),
+        sitk.CenteredTransformInitializerFilter.GEOMETRY
+    )
+    #initial_transform = sitk.Euler3DTransform(initial_transform)
 
-# Initial transform
-registration_method.SetInitialTransform(initial_transform, inPlace=False)
+    # Setup registration
+    registration_method = sitk.ImageRegistrationMethod()
+    registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=200)
+    registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
+    registration_method.SetMetricSamplingPercentage(0.5)
+    registration_method.SetOptimizerAsGradientDescent(
+        learningRate=0.3,
+        numberOfIterations=4096,
+        convergenceMinimumValue=1e-6,
+        convergenceWindowSize=10
+    )
+    registration_method.SetOptimizerScalesFromPhysicalShift()
+    registration_method.SetInterpolator(sitk.sitkLinear)
+    registration_method.SetInitialTransform(initial_transform, inPlace=False)
+    
+    # Containers for history
+    metric_history = []
+    transform_history = []
 
-initial_resampled = sitk.Resample(
-    moving_image,
-    fixed_image,
-    initial_transform,
-    sitk.sitkLinear,
-    0.0,
-    moving_image.GetPixelID()
-)
+    def iteration_callback():
+        # Called at every optimizer iteration
+        metric  = registration_method.GetMetricValue()
+        params  = registration_method.GetOptimizerPosition()  # current transform parameters
+        metric_history.append(metric)
+        transform_history.append(params)
 
-# 5. Execute registration
-final_transform = registration_method.Execute(fixed_image, moving_image)
+    # Attach to the registration method
+    registration_method.AddCommand(sitk.sitkIterationEvent, iteration_callback)
 
-# 6. Resample the moving image using the final transform
-resampled_image = sitk.Resample(
-    moving_image,
-    fixed_image,
-    final_transform,
-    sitk.sitkLinear,
-    0.0,
-    moving_image.GetPixelID()
-)
+    # Initial resampling
+    initial_resampled = sitk.Resample(
+        moving_image,
+        fixed_image,
+        initial_transform,
+        sitk.sitkLinear,
+        0.0,
+        moving_image.GetPixelID()
+    )
 
-print("Final transform parameters:", final_transform.GetParameters())  # (rx, ry, rz, tx, ty, tz)
+    # Execute registration
+    final_transform = registration_method.Execute(fixed_image, moving_image)
+    
+    # Choose indices to visualize (e.g., 0, 100, 200, … up to last)
+    interval = 200
+    indices  = list(range(0, len(transform_history), interval))
+    indices.append(len(transform_history)-1)  # ensure final
 
-# Create overlays
-before_overlay = create_overlay_image(fixed_image, initial_resampled)
-after_overlay = create_overlay_image(fixed_image, resampled_image)
+    # Generate resampled snapshots
+    snapshots = []
+    print(len(transform_history))
+    print("Transform history indices:", indices)
+    for i in range(len(transform_history)):
+        params = transform_history[i]
+        # Build a fresh transform object
+        t = sitk.Euler3DTransform()
+        t.SetParameters(params)
+        # Resample moving at this intermediate transform
+        img_i = sitk.Resample(
+            moving_image, fixed_image, t,
+            sitk.sitkLinear, 0.0, moving_image.GetPixelID()
+        )
+        snapshots.append((i, img_i))
+        
+    print("Snapshots length:", len(snapshots))
 
-#print before and after image direction
-print("Before registration direction:", initial_resampled.GetDirection())
-print("After registration direction:", resampled_image.GetDirection())
-print("Before registration size:", initial_resampled.GetSize())
-print("After registration size:", resampled_image.GetSize())
-print("Before registration origin:", initial_resampled.GetOrigin())
-print("After registration origin:", resampled_image.GetOrigin())
-print("Before registration spacing:", initial_resampled.GetSpacing())
-print("After registration spacing:", resampled_image.GetSpacing())
-print("Before registration pixel type:", initial_resampled.GetPixelIDTypeAsString())
-print("After registration pixel type:", resampled_image.GetPixelIDTypeAsString())
+    # Final resampling
+    resampled_image = sitk.Resample(
+        moving_image,
+        fixed_image,
+        final_transform,
+        sitk.sitkLinear,
+        0.0,
+        moving_image.GetPixelID()
+    )
 
-# Plot side-by-side
-plt.figure(figsize=(16, 8))
+    print("Final transform parameters:", final_transform.GetParameters())
+    
+    print("Initial transform parameters:", initial_transform.GetParameters())
+    print(initial_transform)
+    print("Final transform parameters:", final_transform.GetParameters())
+    print(final_transform)
+    
+    #write the transform to a file
+    moving_base = os.path.basename(args.moving)
+    transform_file = "recalage/transforms/" + "transform_" + moving_base + ".txt"
+    sitk.WriteTransform(final_transform, transform_file)
+    print(f"Transform saved as: {transform_file}")
 
-plt.subplot(1, 2, 1)
-plt.imshow(before_overlay, origin='lower')
-plt.title("Before Registration")
-plt.axis('off')
+    print("Before registration direction:", moving_image.GetDirection())
+    print("After registration direction:", resampled_image.GetDirection())
+    
+    print("\nBefore registration size:", moving_image.GetSize())
+    print("After registration size:", resampled_image.GetSize())
+    
+    print("\nBefore registration origin:", moving_image.GetOrigin())
+    print("After registration origin:", resampled_image.GetOrigin())
+    
+    print("\nBefore registration spacing:", moving_image.GetSpacing())
+    print("After registration spacing:", resampled_image.GetSpacing())
+    
+    print("\nBefore registration center:", moving_center)
+    print("After registration center:", compute_center(resampled_image))
+    
+    print("\nBefore registration pixel type:", moving_image.GetPixelIDTypeAsString())
+    print("After registration pixel type:", resampled_image.GetPixelIDTypeAsString())
 
-plt.subplot(1, 2, 2)
-plt.imshow(after_overlay, origin='lower')
-plt.title("After Registration")
-plt.axis('off')
+    if args.visualize:
+        before_overlay = create_overlay_image(fixed_image, initial_resampled)
+        after_overlay = create_overlay_image(fixed_image, resampled_image)
 
-plt.tight_layout()
-plt.show()
+        # Plot results
+        plt.figure(figsize=(16, 8))
 
-#sitk.Show(resampled_image, "Registered Image")
+        plt.subplot(1, 2, 1)
+        plt.imshow(before_overlay, origin='lower')
+        plt.title("Before Registration")
+        plt.axis('off')
 
-# Save the result
-sitk.WriteImage(resampled_image, f"registered_{file_type}.vtk")
+        plt.subplot(1, 2, 2)
+        plt.imshow(after_overlay, origin='lower')
+        plt.title("After Registration")
+        plt.axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # 3A) Plot metric vs iteration
+        plt.figure(figsize=(6,4))
+        plt.plot(metric_history, '-k')
+        plt.xlabel("Iteration")
+        plt.ylabel("Metric (Mutual Information)")
+        plt.title("Registration Metric History")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+        # 3B) Plot overlays at selected iterations
+        n = len(snapshots)
+        cols = min(4, n)
+        rows = int(np.ceil(n/cols))
+        fig, axes = plt.subplots(rows, cols, figsize=(4*cols, 4*rows))
+
+        for ax, (it, img_i) in zip(axes.flat, snapshots):
+            # build overlay (reuse your create_overlay_image)
+            ov = create_overlay_image(fixed_image, img_i)
+            ax.imshow(ov, origin='lower')
+            ax.set_title(f"Iter {it}")
+            ax.axis('off')
+
+        # hide unused
+        for ax in axes.flat[n:]:
+            ax.axis('off')
+
+        plt.tight_layout()
+        plt.show()
+        
+        save_registration_gif(snapshots, fixed_image)
+
+    # Save result
+    moving_base = os.path.basename(args.moving)
+    output_name = f"registered_{moving_base}"
+    output_folder = "recalage/registered_surface/"
+    sitk.WriteImage(resampled_image, output_folder+output_name)
+    print(f"Registered image saved as: {output_name}")
+
+if __name__ == "__main__":
+    main()

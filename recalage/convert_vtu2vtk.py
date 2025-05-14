@@ -136,6 +136,9 @@ field = "Velocity"
 unstructured = readVtuImages(vtu_path)
 
 sitk_img = vtu_to_sitk_image(unstructured, scalar_name=scalar_field)
+#get sitk_img orient
+#image = sitk.ReadImage(sitk_img, sitk.sitkFloat32)
+
 orientation = "SPR"
 oriented_img = sitk.DICOMOrient(sitk_img, orientation)
 sitk.WriteImage(oriented_img, f"VTK_Files/Stokes_image_{orientation}_pressure.vtk")

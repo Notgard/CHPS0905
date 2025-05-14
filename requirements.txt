@@ -1,0 +1,8 @@
+pyvista
+simpleitk
+vtk
+itk
+scipy
+meshio
+itk-elastix
+imageio
