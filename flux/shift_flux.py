@@ -3,7 +3,7 @@ import SimpleITK as sitk
 import pyvista as pv
 
 # Read the transform back from file:
-transform = sitk.ReadTransform("recalage/transforms/transform_Sag_Optm_output.vtk.txt")
+transform = sitk.ReadTransform("recalage/transforms/transform_Sag_GRE_output.vtk.txt")
 
 #help(transform)
 
@@ -27,7 +27,7 @@ for i in range(num_transforms):
     A[:3, :3] = R
     A[:3,  3] = t
 
-    print("4×4 affine matrix:\n", A)
+    print("4x4 affine matrix:\n", A)
 
     # Load your Stokes mesh (or whichever you’re moving)
     stokes = pv.read("VTK_Files/Stokes.vtu")
@@ -45,5 +45,4 @@ for i in range(num_transforms):
     plotter.add_mesh(stokes_registered, color="lightgray", opacity=0.5)
     plotter.add_volume(fx, opacity=0.5)
     plotter.add_volume(moving)
-    # … plus your glyphs overlay …
     plotter.show()

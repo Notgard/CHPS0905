@@ -40,10 +40,10 @@ flux_magnitude = flux.point_data[flux_magnitude_field]
 flux_magnitude_norm = (flux_magnitude - flux_magnitude.min()) / (flux_magnitude.max() - flux_magnitude.min())
 flux.point_data[flux_magnitude_field] = flux_magnitude_norm
 
-stokes_filtered = stokes.threshold(value=0.07, scalars=stokes_magnitude_field)
+#stokes = stokes.threshold(value=0.05, scalars=stokes_magnitude_field) #filter out near zero magnitude values
 
 # Generate glyphs for both
-glyphs_stokes = stokes_filtered.glyph(
+glyphs_stokes = stokes.glyph(
     orient=vector_field, scale=False, factor=1.5, geom=pv.Arrow()
 )
 glyphs_flux = flux.glyph(
