@@ -85,7 +85,7 @@ Nous allons présenter dans la partie suivante la suite d'exécution de nos scri
 Objectif : supprimer le bruit et les artefacts des volumes IRM avant extraction de la géométrie.
 ```bash
 # Pour chaque sous‑dossier DICOM/$subdir_name :
-python image_filtering/correct_noise.py DICOM/$subdir_name
+python image_filtering/correct_noise.py DICOM/Ax_3DTOF
 ```
 Le script produit des volumes VTK intermé­diaires prêts pour le recalage.
 
