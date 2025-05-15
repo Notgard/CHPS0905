@@ -69,6 +69,17 @@ Les principales bibliothèques utilisées :
 └── requirements.txt
 ```
 
+## Scripts utilitaires
+Nous allons présenter dans la partie suivante la suite d'exécution de nos scripts de traitement de données DICOM. Pour simplifier ce processus relativement long, nous avons mis à disposition 2 scripts shell afin d'exécuter la plupart de ces tâches automatiquement.
+* Le script `process_dicom_filtered_surface.sh` gère le prétraitement, filtrage, recalage et reconstruction volumique de toutes les données DICOM directement.
+```bash
+./process_dicom_filtered_surface.sh
+``` 
+* Le script `process_transform_matrices.sh` permet lui d'extraire les matrices affine correspondant aux transformations permettant le recalage avec l'image fixe (Ax_3DTOF) et sont disponibles par défaut dans le dossier `recalage/matrices/*` après exécution. Il faut alors exécuter ce script après le script précédemment décrit.
+```bash
+./process_transform_matrices.sh
+```
+
 ## 5. Prétraitement & Filtrage
 
 Objectif : supprimer le bruit et les artefacts des volumes IRM avant extraction de la géométrie.
@@ -95,7 +106,7 @@ python 3D/marching_cubes.py \
     recalage/registered_surface/registered_Sag_GRE_output.vtk \
     1
 ```
-Où la deuxième valeur corresponts au *threshold* utilisé par l'algorithme *Marching Cubes* (ici 1 pour des images binaires)
+Où la deuxième valeur correspond au *threshold* utilisé par l'algorithme *Marching Cubes* (ici 1 pour des images binaires)
 
 ## 8. Comparaison des Flux
 
