@@ -6,7 +6,7 @@ import os
 def parse_args():
     parser = argparse.ArgumentParser(description='Process transform files and extract affine matrices.')
     parser.add_argument('--transform', '-t', required=True, help='Path to the transform file')
-    parser.add_argument('--output', '-o', default="recalage/matrices", help='Output file path. If not provided, will use input name with _affine.txt appended')
+    parser.add_argument('--output', '-o', help='Output file path. If not provided, will use input name with _affine.txt appended')
     return parser.parse_args()
 
 def read_transform(transform_path):
@@ -53,12 +53,15 @@ def main():
     args = parse_args()
     transform_path = args.transform
     
+    output_dir = "recalage/matrices"
+    
     # Determine output path
     if args.output:
         output_path = args.output
     else:
         base, _ = os.path.splitext(transform_path)
-        output_path = f"{base}_affine.txt"
+        filename = os.path.basename(base)
+        output_path = f"{output_dir}/{filename}_affine.txt"
     
     print(f"Reading transform from {transform_path}")
     transform = read_transform(transform_path)

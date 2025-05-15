@@ -9,7 +9,7 @@ for file in recalage/transforms/*.txt; do
         echo "Processing transform from recalage of: $file"
         echo "======================================================================="
 
-        python recalage/process_transforms.py --transform="recalage/transforms/$file"
+        python recalage/process_transforms.py --transform="$file"
     fi
 done
 
