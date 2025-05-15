@@ -7,7 +7,7 @@ Antoine Avart, Damien Oudin, Gaël Roubahie‑Fissa, Zinedine Bouzekkar
 
 ## 1. Présentation
 
-Ce dépôt contient l’ensemble des scripts et données nécessaires à l’étude comparative des flux sanguins dans un vaisseau sain (simulation Stokes) et dans un vaisseau présentant un anévrisme (IRM Sag_Flux). Le pipeline couvre :
+Ce dépôt contient l’ensemble des scripts et données nécessaires à l’étude comparative des flux sanguins dans un vaisseau sain et dans un vaisseau présentant un anévrisme (acquisitions IRM format DICOM). Le pipeline couvre :
 
 1. Filtrage et prétraitement des images DICOM.  
 2. Recalage (registration) des volumes.  
