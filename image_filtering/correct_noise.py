@@ -55,7 +55,6 @@ thresholded_image = sitk.Threshold(gaussian_image, lower=otsu_threshold_value, u
 
 #sitk.Show(thresholded_image, f"Gaussian Filtered Image {median_filter.GetRadius()}")
 
-
 binary_image = sitk.BinaryThreshold(thresholded_image, lowerThreshold=1, upperThreshold=65535, insideValue=255, outsideValue=0)
 #sitk.Show(binary_image, "Binary Image")
 
